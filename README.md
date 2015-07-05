@@ -1,0 +1,2 @@
+# slimchat-server
+SlimChat Server
