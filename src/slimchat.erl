@@ -52,9 +52,11 @@ message_published(Message, _Opts) ->
 message_acked(_ClientId, #mqtt_message{msgid = MsgId,
                                        topic = <<"chat/", To/binary>>,
                                        qos = 1}, _Opts) ->
+    lager:info("!!!! ~p Acked", [MsgId]),
     slimchat_msg_store:ack({To, MsgId});
 
-message_acked(_ClientId, _Message, _Opts) ->
+message_acked(_ClientId, Message, _Opts) ->
+    lager:info("!!!! ~p Ingored", [Message]),
     pass.
 
 unload(_Opts) ->
