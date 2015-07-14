@@ -1,6 +1,6 @@
 {application, slimchat,
  [
-  {description, ""},
+  {description, "SlimChat Server"},
   {vsn, "0.1"},
   {registered, []},
   {applications, [
