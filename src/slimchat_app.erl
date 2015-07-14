@@ -1,3 +1,4 @@
+
 -module(slimchat_app).
 
 -behaviour(application).
@@ -10,7 +11,9 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
+    slimchat:load([]),
     slimchat_sup:start_link().
 
 stop(_State) ->
+    slimchat:unload([]),
     ok.
