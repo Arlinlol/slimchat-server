@@ -135,19 +135,16 @@ MQTT承载即时消息报文的Topic，全部以'$IM/'前缀标识，以便Broke
 ```
 {
 	id: “akx292akak229”,
-	from: “uid:1”,
-	to: “vid:1”,
+	from: “uid1”,
+	to: “uid2”,
 	type: “chat | grpchat | event”,
-	thread: ‘threadid’,
-  	content: {
-		type: ‘text’, 
-		‘data’: “blablabla…”
-	},
-	ts: 1938294828
+	chatid: ‘thread id’,
+	body: "ahahah"
+  	ts: 1938294828
  }
 ```
  
-content-type: "text" | "image" | "audio" | "video" | ...
+type: "text" | "image" | "audio" | "video" | ...
 
 
 Name            |Type   |Req    |Description
@@ -260,6 +257,40 @@ ClientA->Broker: Connect with Auth Token
 Broker-->ClientA: Auth Accept
 ClientA<-->Broker: Send/Receive Messages
 ```
+
+### 用户同步业务服务器
+
+POST /online
+
+参数:
+
+Last message id:
+Roster version
+
+返回:
+
+配置、好友、群组变更
+
+
+### 客户端连接消息服务器
+
+MQTT Connect(clientId, username, token)
+
+
+### 客户端发送消息
+
+MQTT Publish(Message)
+
+Topic: 
+
+chat/node/user1
+chat/room/room1
+
+
+### 客户端接收消息
+
+MQTT onMessage(Message)
+
 
 ### 好友管理
 
