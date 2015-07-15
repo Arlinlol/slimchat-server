@@ -20,24 +20,50 @@
 %%% SOFTWARE.
 %%%-----------------------------------------------------------------------------
 %%% @doc
-%%% SlimChat Header
+%%% SlimChat Mnesia Table Management.
 %%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 
--record(slimchat_account, {username, nick,
-                           group = <<"friend">>,
-                           presence = offline,
-                           show = unavailable,
-                           status = <<"">>,
-                           avatar}).
+-module(slimchat_tables).
 
--record(slimchat_contact, {uname, cname}).
+-include("slimchat.hrl").
 
--record(slimchat_room, {name, nick,
-                        topic,
-                        avatar}).
+-export([create_tables/0, copy_tables/0]).
 
--record(slimchat_memeber, {room, uname}).
+create_tables() ->
+
+    mnesia:create_tables(slimchat_account, [
+                {type, set},
+                {ram_copies, [node()]},
+                {record_name, slimchat_account},
+                {attributes, record_info(fields, slimchat_account)}
+            ]),
+
+    mnesia:create_table(slimchat_contact, [
+                {type, bag},
+                {ram_copies, [node()]},
+                {record_name, slimchat_contact},
+                {attributes, record_info(fields, slimchat_contact)}
+            ]),
+
+    mnesia:create_table(slimchat_room, [
+                {type, set},
+                {ram_copies, [node()]},
+                {record_name, slimchat_room},
+                {attributes, record_info(fields, slimchat_room)}
+            ]),
+
+    mnesia:create_table(slimchat_member, [
+                {type, bag},
+                {ram_copies, [node()]},
+                {record_name, slimchat_contact},
+                {attributes, record_info(fields, slimchat_contact)}
+            ]).
+
+copy_tables() ->
+    [mnesia:add_table_copy(Tab, node(), ram_copies) ||
+            Tab <- [slimchat_account, slimchat_contact,
+                    slimchat_room, slimchat_member]].
 
 
