@@ -20,45 +20,22 @@
 %%% SOFTWARE.
 %%%-----------------------------------------------------------------------------
 %%% @doc
-%%% SlimChat Main Module
+%%% Authentication with username, password.
 %%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 
--module(slimchat).
+-module(slimchat_auth).
 
--author("Feng Lee <feng@emqtt.io>").
+-export([check/2]).
 
--include_lib("emqttd/include/emqttd.hrl").
+check(Username, Password) ->
+    {ok, token()}.
 
--behaviour(emqttd_gen_mod).
-
--export([load/1, message_published/2, message_acked/3, unload/1]).
-
-load(Opts) ->
-    emqttd_broker:hook('message.publish', {?MODULE, slimchat_published},
-                       {?MODULE, message_published, [Opts]}),
-    emqttd_broker:hook('message.acked', {?MODULE, slimchat_acked},
-                       {?MODULE, message_acked, [Opts]}).
-
-message_published(Message = #mqtt_message{msgid = MsgId,
-                                          topic = <<"chat/", To/binary>>,
-                                          qos = 1}, _Opts) ->
-    slimchat_msg_store:store({To, MsgId}, Message), Message;
-
-message_published(Message, _Opts) ->
-    Message.
-
-message_acked(_ClientId, #mqtt_message{msgid = MsgId,
-                                       topic = <<"chat/", To/binary>>,
-                                       qos = 1}, _Opts) ->
-    slimchat_msg_store:ack({To, MsgId});
-
-message_acked(_ClientId, Message, _Opts) ->
-    pass.
-
-unload(_Opts) ->
-    emqttd_broker:unhook('message.publish', {?MODULE, slimchat_published}),
-    emqttd_broker:unhook('message.acked', {?MODULE, slimchat_acked}).
-
+token() ->
+    random:seed(now()),
+    I1 = random:uniform(round(math:pow(2, 48))) - 1,
+    I2 = random:uniform(round(math:pow(2, 32))) - 1,
+    L = lists:flatten(io_lib:format("~12.16.0b~8.16.0b", [I1, I2])),
+    list_to_binary(L).
 

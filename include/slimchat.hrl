@@ -20,45 +20,22 @@
 %%% SOFTWARE.
 %%%-----------------------------------------------------------------------------
 %%% @doc
-%%% SlimChat Main Module
+%%% SlimChat Header
 %%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 
--module(slimchat).
+-record(slimchat_contact, {name, nick,
+                           group = <<"friend">>,
+                           presence = offline,
+                           show = unavailable,
+                           status = <<"">>,
+                           avatar}).
 
--author("Feng Lee <feng@emqtt.io>").
 
--include_lib("emqttd/include/emqttd.hrl").
+-record(slimchat_room, {name, nick,
+                        topic, avatar}).
 
--behaviour(emqttd_gen_mod).
-
--export([load/1, message_published/2, message_acked/3, unload/1]).
-
-load(Opts) ->
-    emqttd_broker:hook('message.publish', {?MODULE, slimchat_published},
-                       {?MODULE, message_published, [Opts]}),
-    emqttd_broker:hook('message.acked', {?MODULE, slimchat_acked},
-                       {?MODULE, message_acked, [Opts]}).
-
-message_published(Message = #mqtt_message{msgid = MsgId,
-                                          topic = <<"chat/", To/binary>>,
-                                          qos = 1}, _Opts) ->
-    slimchat_msg_store:store({To, MsgId}, Message), Message;
-
-message_published(Message, _Opts) ->
-    Message.
-
-message_acked(_ClientId, #mqtt_message{msgid = MsgId,
-                                       topic = <<"chat/", To/binary>>,
-                                       qos = 1}, _Opts) ->
-    slimchat_msg_store:ack({To, MsgId});
-
-message_acked(_ClientId, Message, _Opts) ->
-    pass.
-
-unload(_Opts) ->
-    emqttd_broker:unhook('message.publish', {?MODULE, slimchat_published}),
-    emqttd_broker:unhook('message.acked', {?MODULE, slimchat_acked}).
+-record(slimchat_memeber, {room, who}).
 
 

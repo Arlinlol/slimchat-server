@@ -20,45 +20,63 @@
 %%% SOFTWARE.
 %%%-----------------------------------------------------------------------------
 %%% @doc
-%%% SlimChat Main Module
+%%% Http publish API and websocket client.
 %%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 
--module(slimchat).
+-module(slimchat_http).
 
 -author("Feng Lee <feng@emqtt.io>").
 
--include_lib("emqttd/include/emqttd.hrl").
+-export([handle_request/1]).
 
--behaviour(emqttd_gen_mod).
+-define(APIVER, "/v1").
 
--export([load/1, message_published/2, message_acked/3, unload/1]).
+handle_request(Req) ->
+    handle_request(Req:get(method), Req:get(path), Req).
 
-load(Opts) ->
-    emqttd_broker:hook('message.publish', {?MODULE, slimchat_published},
-                       {?MODULE, message_published, [Opts]}),
-    emqttd_broker:hook('message.acked', {?MODULE, slimchat_acked},
-                       {?MODULE, message_acked, [Opts]}).
+%%
+%% Login
+%%
+handle_request('POST', ?APIVER ++ "/login", Req) ->
+    Params = mochiweb_request:parse_post(Req),
+    Username = g("username", Params),
+    Password = g("password", Params),
+    case slimchat_auth:check(Username, Password) of
+        {ok, Token} ->
+            Json = mochijson2:encode([{status, ok}, {token, Token}]),
+            Req:ok({"application/json", Json});
+        {error, Error} ->
+            Json = mochijson2:encode([{status, error}, {error, Error}]),
+            Req:ok({"text/plain", Json})
+    end;
 
-message_published(Message = #mqtt_message{msgid = MsgId,
-                                          topic = <<"chat/", To/binary>>,
-                                          qos = 1}, _Opts) ->
-    slimchat_msg_store:store({To, MsgId}, Message), Message;
+%% 
+%% Online
+%%  
+handle_request('POST', ?APIVER ++ "/online", Req) ->
+    Params = mochiweb_request:parse_post(Req),
+    Req:ok({"text/plain", <<"[]">>});
 
-message_published(Message, _Opts) ->
-    Message.
+%% 
+%% Contacts
+%%  
+handle_request('GET', ?APIVER ++ "/contacts", Req) ->
+    Params = mochiweb_request:parse_post(Req),
+    Req:ok({"text/plain", <<"[]">>});
 
-message_acked(_ClientId, #mqtt_message{msgid = MsgId,
-                                       topic = <<"chat/", To/binary>>,
-                                       qos = 1}, _Opts) ->
-    slimchat_msg_store:ack({To, MsgId});
+%% 
+%% 404
+%%  
+handle_request(Method, Path, Req) ->
+    lager:error("HTTP Bad Request: ~s ~s", [Method, Path]),
+	Req:not_found().
 
-message_acked(_ClientId, Message, _Opts) ->
-    pass.
 
-unload(_Opts) ->
-    emqttd_broker:unhook('message.publish', {?MODULE, slimchat_published}),
-    emqttd_broker:unhook('message.acked', {?MODULE, slimchat_acked}).
+g(Name, Params) ->
+    proplists:get_value(Name, Params).
 
+g(Name, Params, Default) ->
+    proplists:get_value(Name, Params, Default).
 
