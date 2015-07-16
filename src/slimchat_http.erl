@@ -65,7 +65,7 @@ handle_request('POST', ?APIVER ++ "/online", Req) ->
                 {server_time, slimchat_misc:now_to_secs()},
                 {ticket, slimchat_ticket:token()},
                 {broker, <<"tcp://slimpp.io:1883">>},
-                {contacts, [slimchat_contact:to_list(Contact) || Contact <- Contacts]},
+                {buddies, [slimchat_contact:to_list(Contact) || Contact <- Contacts]},
                 {rooms, [slimchat_room:to_list(Room) || Room <- Rooms]}],
     jsonReply(Req, Response);
 
