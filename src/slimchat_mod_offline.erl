@@ -20,12 +20,12 @@
 %%% SOFTWARE.
 %%%-----------------------------------------------------------------------------
 %%% @doc
-%%% SlimChat Main Module
+%%% SlimChat Offline Module.
 %%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 
--module(slimchat).
+-module(slimchat_mod_offline).
 
 -author("Feng Lee <feng@emqtt.io>").
 
@@ -33,32 +33,26 @@
 
 -behaviour(emqttd_gen_mod).
 
--export([load/1, client_connected/3, message_published/2, message_acked/3, unload/1]).
+-export([load/1, publish_offline_msg/3, unload/1]).
+
+%%%=============================================================================
+%%% API
+%%%=============================================================================
 
 load(Opts) ->
-    emqttd_broker:hook('message.publish', {?MODULE, slimchat_published},
-                       {?MODULE, message_published, [Opts]}),
-    emqttd_broker:hook('message.acked', {?MODULE, slimchat_acked},
-                       {?MODULE, message_acked, [Opts]}).
+    emqttd_broker:hook('client.subscribe.after', {?MODULE, slimchat_offline_msg},
+                       {?MODULE, publish_offline_msg, [Opts]}).
 
-message_published(Message = #mqtt_message{msgid = MsgId,
-                                          topic = <<"chat/", To/binary>>,
-                                          qos = 1}, _Opts) ->
-    slimchat_msg_store:store({To, MsgId}, Message), Message;
+publish_offline_msg(_ClientId, TopicTable, _Opts) ->
+    [publish_to(Topic) || {Topic, _Qos} <- TopicTable].
 
-message_published(Message, _Opts) ->
-    Message.
+publish_to(<<"chat/", To/binary>>) ->
+    Msgs = slimchat_msg_store:lookup(To),
+    [emqttd_pubsub:publish(Msg) || Msg <- Msgs];
+    
+publish_to(_Topic) ->
+    ok.
 
-message_acked(_ClientId, #mqtt_message{msgid = MsgId,
-                                       topic = <<"chat/", To/binary>>,
-                                       qos = 1}, _Opts) ->
-    slimchat_msg_store:ack({To, MsgId});
-
-message_acked(_ClientId, Message, _Opts) ->
-    pass.
-
-unload(_Opts) ->
-    emqttd_broker:unhook('message.publish', {?MODULE, slimchat_published}),
-    emqttd_broker:unhook('message.acked', {?MODULE, slimchat_acked}).
-
+unload(_) ->
+    emqttd_broker:unhook('client.subscribe.after', {?MODULE, slimchat_offline_msg}).
 

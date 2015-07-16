@@ -25,7 +25,7 @@
 %%% @end
 %%%-----------------------------------------------------------------------------
 
--module(slimchat_presence).
+-module(slimchat_mod_presence).
 
 -author("Feng Lee <feng@emqtt.io>").
 
