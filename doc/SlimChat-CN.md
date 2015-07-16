@@ -318,7 +318,15 @@ username | 用户名
 
 ### 客户端连接消息服务器
 
-MQTT Connect(clientId, username, token)
+#### MQTT API
+
+MQTT CONNECT(clientId, username, ticket)
+
+MQTT 参数  | 值
+-----------|-----
+clientId   | 手机DevID
+username   | 用户名
+password   | 认证ticket
 
 
 ### 客户端发送消息
