@@ -20,16 +20,20 @@
 %%% SOFTWARE.
 %%%-----------------------------------------------------------------------------
 %%% @doc
-%%% Authentication with username, password.
+%%% Ticket token
 %%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 
--module(slimchat_auth).
+-module(slimchat_ticket).
 
--export([check/2]).
+-export([token/0]).
 
-check(Username, Password) ->
-    ok.
+token() ->
+    random:seed(now()),
+    I1 = random:uniform(round(math:pow(2, 48))) - 1,
+    I2 = random:uniform(round(math:pow(2, 32))) - 1,
+    L = lists:flatten(io_lib:format("~12.16.0b~8.16.0b", [I1, I2])),
+    list_to_binary(L).
 
-
+    

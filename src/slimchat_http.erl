@@ -34,7 +34,10 @@
 -define(APIVER, "/v1").
 
 handle_request(Req) ->
-    handle_request(Req:get(method), Req:get(path), Req).
+    Method = Req:get(method),
+    Path = Req:get(path),
+    lager:info("HTTP ~s ~s", [Method, Path]),
+    handle_request(Method, Path, Req).
 
 %%
 %% Login
@@ -44,12 +47,10 @@ handle_request('POST', ?APIVER ++ "/login", Req) ->
     Username = g("username", Params),
     Password = g("password", Params),
     case slimchat_auth:check(Username, Password) of
-        {ok, Token} ->
-            Json = mochijson2:encode([{status, ok}, {token, Token}]),
-            Req:ok({"application/json", Json});
+        ok ->
+            jsonReply(Req, [{status, ok}]);
         {error, Error} ->
-            Json = mochijson2:encode([{status, error}, {error, Error}]),
-            Req:ok({"text/plain", Json})
+            jsonReply(Req, [{status, error}, {error, Error}])
     end;
 
 %% 
@@ -57,13 +58,22 @@ handle_request('POST', ?APIVER ++ "/login", Req) ->
 %%  
 handle_request('POST', ?APIVER ++ "/online", Req) ->
     Params = mochiweb_request:parse_post(Req),
-    Req:ok({"text/plain", <<"[]">>});
+    Username = list_to_binary(g("username", Params)),
+    Contacts = slimchat_mnesia:contacts(Username),
+    Rooms = slimchat_mnesia:rooms(Username),
+    Response = [{success, true},
+                {server_time, slimchat_misc:now_to_secs()},
+                {ticket, slimchat_ticket:token()},
+                {broker, <<"tcp://slimpp.io:1883">>},
+                {contacts, [slimchat_contact:to_list(Contact) || Contact <- Contacts]},
+                {rooms, [slimchat_room:to_list(Room) || Room <- Rooms]}],
+    jsonReply(Req, Response);
 
 %% 
 %% Contacts
 %%  
 handle_request('GET', ?APIVER ++ "/contacts", Req) ->
-    Params = mochiweb_request:parse_post(Req),
+    %% Params = mochiweb_request:parse_post(Req),
     Req:ok({"text/plain", <<"[]">>});
 
 %% 
@@ -73,10 +83,13 @@ handle_request(Method, Path, Req) ->
     lager:error("HTTP Bad Request: ~s ~s", [Method, Path]),
 	Req:not_found().
 
-
 g(Name, Params) ->
     proplists:get_value(Name, Params).
 
 g(Name, Params, Default) ->
     proplists:get_value(Name, Params, Default).
+
+jsonReply(Req, Data) ->
+    Json = mochijson2:encode(Data),
+    Req:ok({"application/json", Json}).
 

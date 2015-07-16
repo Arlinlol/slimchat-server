@@ -20,16 +20,17 @@
 %%% SOFTWARE.
 %%%-----------------------------------------------------------------------------
 %%% @doc
-%%% Authentication with username, password.
+%%% SlimChat Room
 %%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 
--module(slimchat_auth).
+-module(slimchat_room).
 
--export([check/2]).
+-include("slimchat.hrl").
 
-check(Username, Password) ->
-    ok.
+-export([to_list/1]).
 
+to_list(#slimchat_room{name = Name, nick = Nick}) ->
+    [{id, Name}, {nick, Nick}, {avatar, <<"">>}].
 
