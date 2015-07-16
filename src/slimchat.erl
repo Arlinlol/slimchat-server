@@ -33,7 +33,7 @@
 
 -behaviour(emqttd_gen_mod).
 
--export([load/1, client_connected/3, message_published/2, message_acked/3, unload/1]).
+-export([load/1, message_published/2, message_acked/3, unload/1]).
 
 load(Opts) ->
     emqttd_broker:hook('message.publish', {?MODULE, slimchat_published},
@@ -54,8 +54,8 @@ message_acked(_ClientId, #mqtt_message{msgid = MsgId,
                                        qos = 1}, _Opts) ->
     slimchat_msg_store:ack({To, MsgId});
 
-message_acked(_ClientId, Message, _Opts) ->
-    pass.
+message_acked(_ClientId, _Message, _Opts) ->
+    ok.
 
 unload(_Opts) ->
     emqttd_broker:unhook('message.publish', {?MODULE, slimchat_published}),
