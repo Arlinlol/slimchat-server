@@ -136,7 +136,7 @@ MQTT承载即时消息报文的Topic，全部以'$IM/'前缀标识，以便Broke
 	id: “akx292akak229”,
 	from: “uid1”,
 	to: “uid2”,
-	type: “chat | grpchat | event”,
+	type: “text | image | audio | video”,
 	chatid: ‘thread id’,
 	body: "ahahah"
   	ts: 1938294828
@@ -244,32 +244,78 @@ ticket          |string |true   |
 
 ### 用户认证
 
+#### 认证流程
+
 ![User Authentication](http://slimchat.io/img/UserAuth.png)
 
 ```
 
 title User Authentication Sequence
 
-ClientA->AppServer: HTTP POST /login
+ClientA->AppServer: HTTP POST /v1/login
 AppServer-->ClientA: Return Auth Token
 ClientA->Broker: Connect with Auth Token
 Broker-->ClientA: Auth Accept
 ClientA<-->Broker: Send/Receive Messages
 ```
 
-### 用户同步业务服务器
+#### HTTP API
 
-POST /online
+HTTP POST /v1/login
 
-参数:
+#### 输入参数
 
-Last message id:
-Roster version
+参数 | 说明
+-----|-----
+username | 用户名
+password | 密码
 
-返回:
+#### 成功返回
 
-配置、好友、群组变更
+```
+{status: "ok"}
+```
 
+#### 失败返回
+```
+{status: "error", error: "Error Password!"}
+```
+
+### 用户上线
+
+#### 上线流程
+
+```
+title User Online Sequence
+
+ClientA->AppServer: HTTP POST /v1/online
+AppServer-->ClientA: Return JSON
+ClientA->Broker: MQTT CONNECT
+Broker-->ClientA: MQTT CONNACK
+ClientA<-->Broker: Send/Receive Messages
+```
+
+#### HTTP API
+
+HTTP POST /v1/login
+
+#### 输入参数
+
+参数 | 说明
+-----|-----
+username | 用户名
+
+#### 成功返回
+
+```
+{success: true,
+ server_time: 19381883,
+ ticket: "xsksdkd2992",
+ broker: "tcp://slimpp.io:1883",
+ buddies: [],
+ rooms: []
+}
+```
 
 ### 客户端连接消息服务器
 
