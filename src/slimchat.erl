@@ -31,9 +31,14 @@
 
 -include_lib("emqttd/include/emqttd.hrl").
 
+-export([broker/0]).
+
 -behaviour(emqttd_gen_mod).
 
 -export([load/1, message_published/2, message_acked/3, unload/1]).
+
+broker() ->
+    {ok, Addr} = application:get_env(slimchat, broker), Addr.
 
 load(Opts) ->
     emqttd_broker:hook('message.publish', {?MODULE, slimchat_published},
