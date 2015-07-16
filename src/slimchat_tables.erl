@@ -33,18 +33,18 @@
 
 create_tables() ->
 
-    mnesia:create_tables(slimchat_account, [
-                {type, set},
-                {ram_copies, [node()]},
-                {record_name, slimchat_account},
-                {attributes, record_info(fields, slimchat_account)}
-            ]),
-
     mnesia:create_table(slimchat_contact, [
-                {type, bag},
+                {type, set},
                 {ram_copies, [node()]},
                 {record_name, slimchat_contact},
                 {attributes, record_info(fields, slimchat_contact)}
+            ]),
+
+    mnesia:create_table(slimchat_roster, [
+                {type, bag},
+                {ram_copies, [node()]},
+                {record_name, slimchat_roster},
+                {attributes, record_info(fields, slimchat_roster)}
             ]),
 
     mnesia:create_table(slimchat_room, [
@@ -57,13 +57,13 @@ create_tables() ->
     mnesia:create_table(slimchat_member, [
                 {type, bag},
                 {ram_copies, [node()]},
-                {record_name, slimchat_contact},
-                {attributes, record_info(fields, slimchat_contact)}
+                {record_name, slimchat_member},
+                {attributes, record_info(fields, slimchat_member)}
             ]).
 
 copy_tables() ->
     [mnesia:add_table_copy(Tab, node(), ram_copies) ||
-            Tab <- [slimchat_account, slimchat_contact,
+            Tab <- [slimchat_contact, slimchat_roster,
                     slimchat_room, slimchat_member]].
 
 

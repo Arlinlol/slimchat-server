@@ -3,7 +3,6 @@
 
 Draft
 
-
 ## SlimChat简介
 
 SlimChat是基于HTTP、MQTT协议的轻量移动即时消息框架。SlimChat主要用于手机、物联网设备、Web的消息推送或即时消息。

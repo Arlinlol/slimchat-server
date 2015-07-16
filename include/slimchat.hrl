@@ -25,19 +25,19 @@
 %%% @end
 %%%-----------------------------------------------------------------------------
 
--record(slimchat_account, {username, nick,
+-record(slimchat_contact, {username, nick,
                            group = <<"friend">>,
                            presence = offline,
                            show = unavailable,
                            status = <<"">>,
                            avatar}).
 
--record(slimchat_contact, {uname, cname}).
+-record(slimchat_roster, {uname, cname}).
 
 -record(slimchat_room, {name, nick,
                         topic,
                         avatar}).
 
--record(slimchat_memeber, {room, uname}).
+-record(slimchat_member, {room, uname}).
 
 
