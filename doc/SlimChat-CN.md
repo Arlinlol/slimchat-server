@@ -249,7 +249,6 @@ ticket          |string |true   |
 ![User Authentication](http://slimchat.io/img/UserAuth.png)
 
 ```
-
 title User Authentication Sequence
 
 ClientA->AppServer: HTTP POST /v1/login
@@ -297,11 +296,11 @@ ClientA<-->Broker: Send/Receive Messages
 
 #### HTTP API
 
-HTTP POST /v1/login
+HTTP POST /v1/online
 
 #### 输入参数
 
-参数 | 说明
+参数  | 说明
 -----|-----
 username | 用户名
 

@@ -1,5 +1,7 @@
 -module(slimchat_roster).
+
 -behaviour(gen_server).
+
 -define(SERVER, ?MODULE).
 
 %% ------------------------------------------------------------------

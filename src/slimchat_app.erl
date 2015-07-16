@@ -39,6 +39,7 @@
 start(_StartType, _StartArgs) ->
     {ok, Sup} = slimchat_sup:start_link(),
     slimchat:load([]),
+    slimchat_presence:load([]),
     start_listeners(),
     {ok, Sup}.
     

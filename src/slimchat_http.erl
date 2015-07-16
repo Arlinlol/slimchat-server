@@ -66,7 +66,9 @@ handle_request('POST', ?APIVER ++ "/online", Req) ->
                 {ticket, slimchat_ticket:token()},
                 {broker, <<"tcp://slimpp.io:1883">>},
                 {buddies, [slimchat_contact:to_list(Contact) || Contact <- Contacts]},
-                {rooms, [slimchat_room:to_list(Room) || Room <- Rooms]}],
+                {rooms, [slimchat_room:to_list(Room) || Room <- Rooms]},
+                {user, [{id, Username}, {nick, Username},
+                        {presence, online}, {show, available}]}],
     jsonReply(Req, Response);
 
 %% 
@@ -86,8 +88,8 @@ handle_request(Method, Path, Req) ->
 g(Name, Params) ->
     proplists:get_value(Name, Params).
 
-g(Name, Params, Default) ->
-    proplists:get_value(Name, Params, Default).
+%% g(Name, Params, Default) ->
+%%    proplists:get_value(Name, Params, Default).
 
 jsonReply(Req, Data) ->
     Json = mochijson2:encode(Data),

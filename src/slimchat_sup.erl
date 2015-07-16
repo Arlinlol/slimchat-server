@@ -26,6 +26,5 @@ init([]) ->
     {ok, { {one_for_one, 5, 10}, [?CHILD(slimchat_msg_store, worker),
                                   ?CHILD(slimchat_mnesia, worker),
                                   ?CHILD(slimchat_roster, worker),
-                                  ?CHILD(slimchat_presence, worker),
                                   ?CHILD(slimchat_grpchat, worker)]} }.
 
