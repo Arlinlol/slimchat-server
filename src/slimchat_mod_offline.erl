@@ -47,7 +47,6 @@ publish_offline_msg(_ClientId, TopicTable, _Opts) ->
     [publish_to(Topic) || {Topic, _Qos} <- TopicTable].
 
 publish_to(<<"chat/", To/binary>>) ->
-    lager:info("Publish Offline to ~s", [To]),
     Msgs = slimchat_msg_store:lookup(To),
     [emqttd_pubsub:publish(Msg) || Msg <- Msgs];
     
