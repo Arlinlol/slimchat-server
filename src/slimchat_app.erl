@@ -38,11 +38,14 @@
 
 start(_StartType, _StartArgs) ->
     {ok, Sup} = slimchat_sup:start_link(),
-    slimchat:load([]),
-    slimchat_mod_offline:load([]),
-    slimchat_mod_presence:load([]),
+    load_modules(),
     start_listeners(),
     {ok, Sup}.
+
+load_modules() ->
+    slimchat_mod_message:load([]),
+    slimchat_mod_offline:load([]),
+    slimchat_mod_presence:load([]).
     
 start_listeners() ->
     {ok, Listeners} = application:get_env(listeners),
@@ -52,9 +55,12 @@ start_listener({http, Port, SockOpts}) ->
     MFArgs = {slimchat_http, handle_request, []},
 	mochiweb:start_http(Port, SockOpts, MFArgs).
 
-stop(_State) ->
+unload_modules() ->
     slimchat_mod_presence:unload([]),
     slimchat_mod_offline:unload([]),
-    slimchat:unload([]),
+    slimchat_mod_message:unload([]).
+
+stop(_State) ->
+    unload_modules(), 
     ok.
 

@@ -59,7 +59,11 @@ client_online(0, #mqtt_client{client_id  = ClientId,
 
     %% Broadcast presence
     lists:foreach(fun(#slimchat_contact{username = Contact}) ->
-            Json = mochijson2:encode([{from, Username}, {type, online}, {show, available}]),
+            Json = mochijson2:encode([{from, Username},
+                                      {type, online},
+                                      {nick, Username},
+                                      {show, available},
+                                      {status, online}]),
             PresMsg = emqttd_message:make(ClientId, 1, pres_topic(Contact), iolist_to_binary(Json)),
             emqttd_pubsub:publish(PresMsg)
         end, slimchat_mnesia:contacts(Username));
@@ -76,7 +80,11 @@ client_offline(_Reason, ClientId, _Opts) ->
         #mqtt_client{username = Username} ->
         %% Broadcast presence
         lists:foreach(fun(#slimchat_contact{username = Contact}) ->
-                Json = mochijson2:encode([{from, Username}, {type, offline}, {show, unavailable}]),
+                        Json = mochijson2:encode([{from, Username},
+                                                  {type, offline},
+                                                  {nick, Username},
+                                                  {show, unavailable},
+                                                  {status, offline}]),
                 PresMsg = emqttd_message:make(ClientId, 0, pres_topic(Contact), iolist_to_binary(Json)),
                 emqttd_pubsub:publish(PresMsg)
             end, slimchat_mnesia:contacts(Username))
