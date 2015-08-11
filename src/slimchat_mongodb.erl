@@ -29,26 +29,26 @@
 
 -include("slimchat.hrl").
 
+-include_lib("emqttd/include/emqttd.hrl").
+
 %% rooms
 -export([find_rooms/1]).
 
 %% message
 -export([store_message/2, ack_message/2]).
 
-find_room(Username) ->
-    with_mongo_connect(fun(Conn) ->
-            Cursor = mongo:find(Conn, "roomUser", {"userId", Username}),
-            Result = mc_cursor:rest(Cursor),
-            mc_cursor:close(Cursor),
-            Result
-        end, []).
+find_rooms(Username) ->
+    Docs = emongo:find(slimchat, "roomUser", [{<<"userId">>, Username}]),
+    lager:info("~p", [Docs]),
+    lists:foldl(fun(Doc) -> 
+            RoomId = proplists:get_value(<<"roomId">>, Doc),
+        [#slimchat_room{name = RoomId} | Docs]
+    end, [], Docs).
 
 store_message(Key, #mqtt_message{payload = Payload}) ->
     case catch slimchat_json:decode(Payload) of
         {ok, Message} ->
-            with_mongo_connect(fun(Conn) ->
-                    mongo:insert(Conn, <<"message">>, Message)
-                end);
+            emongo:insert(slimchat, "message", Message);
         {'EXIT', Error} ->
             lager:error("JSON Decode Error: ~p", [Error])
     end.
@@ -56,15 +56,4 @@ store_message(Key, #mqtt_message{payload = Payload}) ->
 ack_message(ClientId, Message) ->
     ok.
 
-with_mongo_connect(SuccFun) ->
-    {ok, MongoEnv} = application:get_env(slimchat, mongodb),
-    case mongo:connect(MongoEnv) of
-        {ok, Conn} ->
-            Result = SuccFun(Conn),
-            mongo:disconnect(Conn),
-            Result;
-        {error, Error} ->
-            lager:error("Mongodb Connect Error: ~p", [Error]),
-            {error, Error}
-    end.
 

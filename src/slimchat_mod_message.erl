@@ -44,7 +44,7 @@ load(Opts) ->
 message_published(Message = #mqtt_message{msgid = MsgId,
                                           topic = <<"chat/", To/binary>>,
                                           qos = 1}, _Opts) ->
-    slimchat_mongodb:store({To, MsgId}, Message), Message;
+    slimchat_mongodb:store_message({To, MsgId}, Message), Message;
 
 message_published(Message, _Opts) ->
     Message.
@@ -52,7 +52,7 @@ message_published(Message, _Opts) ->
 message_acked(_ClientId, #mqtt_message{msgid = MsgId,
                                        topic = <<"chat/", To/binary>>,
                                        qos = 1}, _Opts) ->
-    slimchat_mongodb:ack({To, MsgId});
+    slimchat_mongodb:ack_message({To, MsgId});
 
 message_acked(_ClientId, _Message, _Opts) ->
     ok.
