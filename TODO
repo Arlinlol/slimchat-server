@@ -1,7 +1,3 @@
-1. http login
-2. http online
-3. http contacts
-4. mqtt connect
-5. mqtt publish
-6. mqtt subscribe
+mongodb
+to store message
 

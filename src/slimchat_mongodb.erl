@@ -20,45 +20,51 @@
 %%% SOFTWARE.
 %%%-----------------------------------------------------------------------------
 %%% @doc
-%%% SlimChat Message Module
+%%% SlimChat Mnesia Database.
 %%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 
--module(slimchat_mod_message).
+-module(slimchat_mongodb).
 
--author("Feng Lee <feng@emqtt.io>").
+-include("slimchat.hrl").
 
--include_lib("emqttd/include/emqttd.hrl").
+%% rooms
+-export([find_rooms/1]).
 
--behaviour(emqttd_gen_mod).
+%% message
+-export([store_message/2, ack_message/2]).
 
--export([load/1, message_published/2, message_acked/3, unload/1]).
+find_room(Username) ->
+    with_mongo_connect(fun(Conn) ->
+            Cursor = mongo:find(Conn, "roomUser", {"userId", Username}),
+            Result = mc_cursor:rest(Cursor),
+            mc_cursor:close(Cursor),
+            Result
+        end, []).
 
-load(Opts) ->
-    emqttd_broker:hook('message.publish', {?MODULE, slimchat_message_published},
-                       {?MODULE, message_published, [Opts]}),
-    emqttd_broker:hook('message.acked', {?MODULE, slimchat_message_acked},
-                       {?MODULE, message_acked, [Opts]}).
+store_message(Key, #mqtt_message{payload = Payload}) ->
+    case catch slimchat_json:decode(Payload) of
+        {ok, Message} ->
+            with_mongo_connect(fun(Conn) ->
+                    mongo:insert(Conn, <<"message">>, Message)
+                end);
+        {'EXIT', Error} ->
+            lager:error("JSON Decode Error: ~p", [Error])
+    end.
 
-message_published(Message = #mqtt_message{msgid = MsgId,
-                                          topic = <<"chat/", To/binary>>,
-                                          qos = 1}, _Opts) ->
-    slimchat_mongodb:store({To, MsgId}, Message), Message;
-
-message_published(Message, _Opts) ->
-    Message.
-
-message_acked(_ClientId, #mqtt_message{msgid = MsgId,
-                                       topic = <<"chat/", To/binary>>,
-                                       qos = 1}, _Opts) ->
-    slimchat_mongodb:ack({To, MsgId});
-
-message_acked(_ClientId, _Message, _Opts) ->
+ack_message(ClientId, Message) ->
     ok.
 
-unload(_Opts) ->
-    emqttd_broker:unhook('message.publish', {?MODULE, slimchat_message_published}),
-    emqttd_broker:unhook('message.acked', {?MODULE, slimchat_message_acked}).
-
+with_mongo_connect(SuccFun) ->
+    {ok, MongoEnv} = application:get_env(slimchat, mongodb),
+    case mongo:connect(MongoEnv) of
+        {ok, Conn} ->
+            Result = SuccFun(Conn),
+            mongo:disconnect(Conn),
+            Result;
+        {error, Error} ->
+            lager:error("Mongodb Connect Error: ~p", [Error]),
+            {error, Error}
+    end.
 
