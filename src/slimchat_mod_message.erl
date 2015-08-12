@@ -49,10 +49,10 @@ message_published(Message = #mqtt_message{msgid = MsgId,
 message_published(Message, _Opts) ->
     Message.
 
-message_acked(_ClientId, #mqtt_message{msgid = MsgId,
-                                       topic = <<"chat/", To/binary>>,
-                                       qos = 1}, _Opts) ->
-    slimchat_mongodb:ack_message({To, MsgId});
+message_acked(ClientId, Message = #mqtt_message{topic = <<"chat/", To/binary>>,
+                                                qos = 1}, _Opts) ->
+    lager:info("SlimChat: client ~s ack message from ~s", [ClientId, To]),
+    slimchat_mongodb:ack_message(ClientId, Message);
 
 message_acked(_ClientId, _Message, _Opts) ->
     ok.
