@@ -20,20 +20,16 @@
 %%% SOFTWARE.
 %%%-----------------------------------------------------------------------------
 %%% @doc
-%%% Ticket token
+%%% SlimChat MySQL Backend.
 %%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 
--module(slimchat_ticket).
+-module(slimchat_backend_mysql).
 
--export([token/0]).
+-include("slimchat.hrl").
 
-token() ->
-    random:seed(now()),
-    I1 = random:uniform(round(math:pow(2, 48))) - 1,
-    I2 = random:uniform(round(math:pow(2, 32))) - 1,
-    L = lists:flatten(io_lib:format("~12.16.0b~8.16.0b", [I1, I2])),
-    list_to_binary(L).
+-include_lib("emqttd/include/emqttd.hrl").
 
-    
+-behavihour(slimchat_backend).
+

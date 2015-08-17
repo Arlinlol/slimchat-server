@@ -20,40 +20,19 @@
 %%% SOFTWARE.
 %%%-----------------------------------------------------------------------------
 %%% @doc
-%%% SlimChat Mnesia Database.
+%%% SlimChat PostgreSQL Backend.
 %%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 
--module(slimchat_mongodb).
+-module(slimchat_backend_pgsql).
 
 -include("slimchat.hrl").
 
 -include_lib("emqttd/include/emqttd.hrl").
 
-%% rooms
+-behavihour(slimchat_backend).
+
 -export([find_rooms/1]).
-
-%% message
--export([store_message/2, ack_message/2]).
-
-find_rooms(Username) ->
-    Docs = emongo:find(slimchat, "roomUser", [{<<"userId">>, Username}]),
-    lager:info("~p", [Docs]),
-    lists:foldl(fun(Doc) -> 
-            RoomId = proplists:get_value(<<"roomId">>, Doc),
-        [#slimchat_room{name = RoomId} | Docs]
-    end, [], Docs).
-
-store_message(Key, #mqtt_message{payload = Payload}) ->
-    case catch slimchat_json:decode(Payload) of
-        {ok, Message} ->
-            emongo:insert(slimchat, "message", Message);
-        {'EXIT', Error} ->
-            lager:error("JSON Decode Error: ~p", [Error])
-    end.
-
-ack_message(ClientId, Message) ->
-    ok.
 
 

@@ -20,17 +20,40 @@
 %%% SOFTWARE.
 %%%-----------------------------------------------------------------------------
 %%% @doc
-%%% SlimChat Room
+%%% SlimChat Mongodb Backend.
 %%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 
--module(slimchat_room).
+-module(slimchat_backend_mongo).
 
 -include("slimchat.hrl").
 
--export([to_list/1]).
+-include_lib("emqttd/include/emqttd.hrl").
 
-to_list(#slimchat_room{name = Name, nick = Nick}) ->
-    [{id, Name}, {nick, Nick}, {avatar, <<"">>}].
+%% rooms
+-export([find_rooms/1]).
+
+%% message
+-export([store_message/2, ack_message/2]).
+
+find_rooms(Username) ->
+    Docs = emongo:find(slimchat, "roomUser", [{<<"userId">>, Username}]),
+    lager:info("~p", [Docs]),
+    lists:foldl(fun(Doc) -> 
+            RoomId = proplists:get_value(<<"roomId">>, Doc),
+        [#slimchat_room{name = RoomId} | Docs]
+    end, [], Docs).
+
+store_message(Key, #mqtt_message{payload = Payload}) ->
+    case catch slimchat_json:decode(Payload) of
+        {ok, Message} ->
+            emongo:insert(slimchat, "message", Message);
+        {'EXIT', Error} ->
+            lager:error("JSON Decode Error: ~p", [Error])
+    end.
+
+ack_message(ClientId, Message) ->
+    ok.
+
 
