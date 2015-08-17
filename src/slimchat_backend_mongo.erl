@@ -20,32 +20,49 @@
 %%% SOFTWARE.
 %%%-----------------------------------------------------------------------------
 %%% @doc
-%%% SlimChat Mongodb Backend.
+%%% SlimChat MySQL Backend.
 %%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 
 -module(slimchat_backend_mongo).
 
+-author("Feng Lee <feng@emqtt.io>").
+
 -include("slimchat.hrl").
 
 -include_lib("emqttd/include/emqttd.hrl").
 
-%% rooms
--export([find_rooms/1]).
+-behaviour(slimchat_backend).
 
-%% message
--export([store_message/2, ack_message/2]).
+%% slimchat_backend callbacks
+-export([onload/0, onunload/0]).
+
+-export([store_message/1, ack_message/2]).
+
+-export([find_contacts/1, find_rooms/1, find_offline/1]).
+
+onload() ->
+    {ok, _} = application:ensure_all_started(emongo).
+
+find_contacts(Username) ->
+    %%TODO...
+    {ok, []}.
 
 find_rooms(Username) ->
-    Docs = emongo:find(slimchat, "roomUser", [{<<"userId">>, Username}]),
-    lager:info("~p", [Docs]),
-    lists:foldl(fun(Doc) -> 
-            RoomId = proplists:get_value(<<"roomId">>, Doc),
-        [#slimchat_room{name = RoomId} | Docs]
-    end, [], Docs).
+    RelDocs = emongo:find(slimchat, "roomUser", [{<<"userId">>, Username}]),
+    RoomIds = [proplists:get_value(<<"roomId">>, Doc) || Doc <- RelDocs],
+    RoomDocs = emongo:find(slimchat, "room", [{<<"roomName">>, [{in, RoomIds}]}]),
+    {ok, lists:map(fun(RoomDoc) ->
+        #slimchat_room{name  = proplists:get_value(<<"roomName">>,  RoomDoc),
+                       nick  = proplists:get_value(<<"roomTitle">>, RoomDoc),
+                       topic = proplists:get_value(<<"roomTopic">>, RoomDoc)}
+    end, Rooms)}.
 
-store_message(Key, #mqtt_message{payload = Payload}) ->
+find_offline(Endpoint) ->
+    {ok, []}.
+
+store_message(#mqtt_message{payload = Payload}) ->
     case catch slimchat_json:decode(Payload) of
         {ok, Message} ->
             emongo:insert(slimchat, "message", Message);
@@ -56,4 +73,6 @@ store_message(Key, #mqtt_message{payload = Payload}) ->
 ack_message(ClientId, Message) ->
     ok.
 
+onunload() ->
+    application:stop(emongo).
 

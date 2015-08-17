@@ -31,21 +31,25 @@
 
 -export([load/0, unload/0]).
 
--export([store_message/1, ack_message/2]).
+-export([find_contacts/1, find_rooms/1, find_offline/1]).
 
--export([find_rooms/1]).
+-export([store_message/1, ack_message/2]).
 
 -export([to_list/1]).
 
 -ifdef(use_specs).
 
--callback load() -> ok | {error, any()}.
+-callback onload() -> ok | {error, any()}.
 
--callback unload() -> ok | {error, any()}.
+-callback onunload() -> ok | {error, any()}.
 
 -callback store_message(mqtt_message()) -> ok | {error, any()}.
 
 -callback acke_message(ClientId :: binary(), mqtt_message()) -> ok | {error, any()}.
+
+-callback find_offline(To :: binary()) -> {ok, [mqtt_message()]} | {error, any()}.
+
+-callback find_contacts(Username:: binary()) -> {ok, [slimchat_contact()]}.
 
 -callback find_rooms(Username:: binary()) -> {ok, [slimchat_room()]}.
 
@@ -54,7 +58,8 @@
 -export([behaviour_info/1]).
 
 behaviour_info(callbacks) ->
-        [{load, 0}, {unload, 0}, {store_message, 1}, {ack_message, 2}, {find_rooms, 1}];
+        [{onload, 0}, {onunload, 0}, {store_message, 1}, {ack_message, 2},
+         {find_offline, 1}, {find_contacts, 1}, {find_rooms, 1}];
 
 behaviour_info(_Other) ->
         undefined.
@@ -66,7 +71,16 @@ behaviour_info(_Other) ->
 %%%=============================================================================
 
 load() ->
-    with_backend(load, []).
+    with_backend(onload, []).
+
+find_contacts(Username) ->
+    with_backend(find_contacts, [Username]).
+
+find_rooms(Username) ->
+    with_backend(find_rooms, [Username]).
+
+find_offline(Username) ->
+    with_backend(find_offline, [Username]).
 
 store_message(Message) ->
     with_backend(store_message, [Message]).
@@ -74,11 +88,8 @@ store_message(Message) ->
 ack_message(ClientId, Message) ->
     with_backend(ack_message, [ClientId, Message]).
 
-find_rooms(Usernaem) ->
-    with_backend(find_rooms, [Username]).
-
 unload() ->
-    with_backend(unload, []).
+    with_backend(onunload, []).
 
 to_list(#slimchat_contact{username = Name,
                           nick = Nick,
@@ -94,7 +105,6 @@ to_list(#slimchat_contact{username = Name,
 to_list(#slimchat_room{name = Name, nick = Nick}) ->
     [{id, Name}, {nick, Nick}, {avatar, <<"">>}].
 
-
 %%%=============================================================================
 %%% Internal functions
 %%%=============================================================================
@@ -104,5 +114,5 @@ with_backend(Fun, Args) ->
     apply(backend_mod(Backed), Fun, Args).
 
 backend_mod(Backend) ->
-    list_to_atom(["slimchat_backend_", Backend]).
+    list_to_atom("slimchat_backend_" ++ atom_to_list(Backend)).
 

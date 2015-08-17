@@ -33,13 +33,14 @@
 
 -include_lib("emqttd/include/emqttd.hrl").
 
--behaviour_info(slimchat_backend).
+-behaviour(slimchat_backend).
 
--export([load/0, unload/0]).
+%% slimchat_backend callbacks
+-export([onload/0, onunload/0]).
 
 -export([store_message/1, ack_message/2]).
 
--export([find_contacts/1, find_rooms/1]).
+-export([find_contacts/1, find_rooms/1, find_offline/1]).
 
 -export([add_contact/1, del_contact/1, add_room/1, del_room/1]).
 
@@ -80,7 +81,7 @@ load() ->
 find_contacts(Username) ->
     CNames = [CName || #slimchat_roster{cname = CName}
                          <- mnesia:dirty_read(slimchat_roster, Username)],
-    lists:append([mnesia:dirty_read(slimchat_contact, CName) || CName <- CNames]).
+    {ok, lists:append([mnesia:dirty_read(slimchat_contact, CName) || CName <- CNames])}.
 
 add_contact(Contact) when is_record(Contact, slimchat_contact) ->
     mnesia:transaction(fun mnesia:write/1, [Contact]).
@@ -91,7 +92,7 @@ del_contact(Name)->
 find_rooms(Username) ->
     Names =[ Room || #slimchat_member{room = Room} <-
               mnesia:dirty_match_object(#slimchat_member{room = '_', uname = Username}) ],
-    lists:append([mnesia:dirty_read(slimchat_room, Name) || Name <- Names]).
+    {ok, lists:append([mnesia:dirty_read(slimchat_room, Name) || Name <- Names])}.
 
 add_room(Room) when is_record(Room, slimchat_room) ->
     mnesia:transaction(fun mnesia:write/1, [Room]).
@@ -105,9 +106,9 @@ store_message(Message = #mqtt_message{msgid = MsgId, topic = <<"chat/", To/binar
 ack_message(ClientId, Message = #mqtt_message{msgid = MsgId, topic = <<"chat/", To/binary>>) ->
     ets:delete(slimchat_message, {To, MsgId}).
 
-lookup_message(To) ->
-    lists:append(ets:match(slimchat_message, {{To, '_'}, '$1'})).
+find_offline(To) ->
+    {ok, lists:append(ets:match(slimchat_message, {{To, '_'}, '$1'}))}.
 
-unload() ->
+onunload() ->
     ok.
  

@@ -27,6 +27,8 @@
 
 -module(slimchat_app).
 
+-author("Feng Lee <feng@emqtt.io>").
+
 -behaviour(application).
 
 %% Application callbacks
