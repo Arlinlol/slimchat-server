@@ -41,18 +41,16 @@ load(Opts) ->
     emqttd_broker:hook('message.acked', {?MODULE, slimchat_message_acked},
                        {?MODULE, message_acked, [Opts]}).
 
-message_published(Message = #mqtt_message{msgid = MsgId,
-                                          topic = <<"chat/", To/binary>>,
+message_published(Message = #mqtt_message{topic = <<"chat/", _To/binary>>,
                                           qos   = 1}, _Opts) ->
     slimchat_backend:store_message(Message), Message;
 
-mnessage_published(Message, _Opts) ->
+message_published(Message, _Opts) ->
     %% ignore
     Message.
 
-message_acked(ClientId, #mqtt_message{msgid = MsgId,
-                                      topic = <<"chat/", To/binary>>,
-                                      qos   = 1}, _Opts) ->
+message_acked(ClientId, Message = #mqtt_message{topic = <<"chat/", _To/binary>>,
+                                                qos   = 1}, _Opts) ->
     slimchat_backend:ack_message(ClientId, Message);
 
 message_acked(_ClientId, _Message, _Opts) ->

@@ -40,27 +40,29 @@
 
 -export([store_message/1, ack_message/2]).
 
--export([find_contacts/1, find_rooms/1, find_offline/1]).
+-export([find_contacts/1, find_rooms/1, find_offline_msg/1]).
 
 onload() ->
+    {ok, {mongo, Env}} = application:get_env(slimchat, backend),
+    [application:set_env(emongo, Par, Val) || {Par, Val} <- Env],
     {ok, _} = application:ensure_all_started(emongo).
 
 find_contacts(Username) ->
     %%TODO...
-    {ok, []}.
+    [].
 
 find_rooms(Username) ->
     RelDocs = emongo:find(slimchat, "roomUser", [{<<"userId">>, Username}]),
     RoomIds = [proplists:get_value(<<"roomId">>, Doc) || Doc <- RelDocs],
     RoomDocs = emongo:find(slimchat, "room", [{<<"roomName">>, [{in, RoomIds}]}]),
-    {ok, lists:map(fun(RoomDoc) ->
+    lists:map(fun(RoomDoc) ->
         #slimchat_room{name  = proplists:get_value(<<"roomName">>,  RoomDoc),
                        nick  = proplists:get_value(<<"roomTitle">>, RoomDoc),
                        topic = proplists:get_value(<<"roomTopic">>, RoomDoc)}
-    end, Rooms)}.
+    end, RoomDocs).
 
-find_offline(Endpoint) ->
-    {ok, []}.
+find_offline_msg(Endpoint) ->
+    [].
 
 store_message(#mqtt_message{payload = Payload}) ->
     case catch slimchat_json:decode(Payload) of

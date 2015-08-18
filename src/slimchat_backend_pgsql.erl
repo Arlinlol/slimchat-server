@@ -38,19 +38,19 @@
 
 -export([store_message/1, ack_message/2]).
 
--export([find_contacts/1, find_rooms/1, find_offline/1]).
+-export([find_contacts/1, find_rooms/1, find_offline_msg/1]).
 
 onload() ->
     ok.
 
 find_contacts(Username) ->
-    {ok, []}.
+    [].
 
 find_rooms(Username) ->
-    {ok, []}.
+    [].
 
-find_offline(Endpoint) ->
-    {ok, []}.
+find_offline_msg(Endpoint) ->
+    [].
 
 store_message(#mqtt_message{payload = Payload}) ->
     ok.

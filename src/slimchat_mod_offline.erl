@@ -47,7 +47,7 @@ publish_offline_msg(_ClientId, TopicTable, _Opts) ->
     [publish_to(Topic) || {Topic, _Qos} <- TopicTable].
 
 publish_to(<<"chat/", To/binary>>) ->
-    OfflineMsgs = slimchat_backend:find_offline(To),
+    OfflineMsgs = slimchat_backend:find_offline_msg(To),
     [emqttd_pubsub:publish(Msg) || Msg <- OfflineMsgs];
     
 publish_to(_Topic) ->

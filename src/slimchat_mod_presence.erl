@@ -69,8 +69,8 @@ client_online(0, #mqtt_client{client_id  = ClientId,
                     emqttd_message:make(ClientId, qos1,
                                         topic(pres, Contact),
                                         slimchat_json:encode(Presence)))
-            end, slimchat_backend:find_contacts(Username));
-        end),
+            end, slimchat_backend:find_contacts(Username))
+        end);
 
     %% Broadcast presence
 
@@ -88,13 +88,13 @@ client_offline(_Reason, ClientId, _Opts) ->
             emqttd_pooler:async_submit(
                 fun() -> 
                     lists:foreach(fun(#slimchat_contact{username = Contact}) ->
-                        Presnece = presence(offline, Username),
+                        Presence = presence(offline, Username),
                         emqttd_pubsub:publish(
                             emqttd_message:make(ClientId, qos1,
                                                 topic(pres, Contact),
-                                                mochijson2:encode(Presence)))
-                    end, slimchat_mnesia:contacts(Username))
-                end),
+                                                slimchat_json:encode(Presence)))
+                    end, slimchat_backend:find_contacts(Username))
+                end)
     end.
 
 unload(_Opts) ->
@@ -104,8 +104,8 @@ unload(_Opts) ->
 topic(chat, Username) ->
     <<"chat/node/", Username/binary>>;
 
-topic(room, Roomname) ->
-    <<"chat/room/", Roomname/binary>>;
+topic(room, Room) ->
+    <<"chat/room/", Room/binary>>;
 
 topic(pres, Username) ->
     <<"pres/node/", Username/binary>>.
@@ -113,9 +113,9 @@ topic(pres, Username) ->
 presence(online, Username) ->
     [{from, Username},
      {type, online},
-     {nick, Nick},
+     {nick, Username},
      {show, available},
-     {status, online}].
+     {status, online}];
 
 presence(offline, Username) ->
     [{from, Username},

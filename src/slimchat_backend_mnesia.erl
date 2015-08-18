@@ -40,11 +40,11 @@
 
 -export([store_message/1, ack_message/2]).
 
--export([find_contacts/1, find_rooms/1, find_offline/1]).
+-export([find_contacts/1, find_rooms/1, find_offline_msg/1]).
 
 -export([add_contact/1, del_contact/1, add_room/1, del_room/1]).
 
-load() ->
+onload() ->
     ets:new(slimchat_message, [ordered_set, named_table, public]),
     mnesia:create_table(slimchat_contact, [
                 {type, ordered_set},
@@ -75,7 +75,7 @@ load() ->
                 {ram_copies, [node()]},
                 {record_name, slimchat_member},
                 {attributes, record_info(fields, slimchat_member)}
-            ]).
+            ]),
     mnesia:add_table_copy(slimchat_member, node(), ram_copies).
 
 find_contacts(Username) ->
@@ -92,7 +92,7 @@ del_contact(Name)->
 find_rooms(Username) ->
     Names =[ Room || #slimchat_member{room = Room} <-
               mnesia:dirty_match_object(#slimchat_member{room = '_', uname = Username}) ],
-    {ok, lists:append([mnesia:dirty_read(slimchat_room, Name) || Name <- Names])}.
+    lists:append([mnesia:dirty_read(slimchat_room, Name) || Name <- Names]).
 
 add_room(Room) when is_record(Room, slimchat_room) ->
     mnesia:transaction(fun mnesia:write/1, [Room]).
@@ -100,13 +100,13 @@ add_room(Room) when is_record(Room, slimchat_room) ->
 del_room(Name) ->
     mnesia:transaction(fun mnesia:delete/1, [{slimchat_room, Name}]).
 
-store_message(Message = #mqtt_message{msgid = MsgId, topic = <<"chat/", To/binary>>) ->
+store_message(Message = #mqtt_message{msgid = MsgId, topic = <<"chat/", To/binary>>}) ->
     ets:insert(slimchat_message, {{To, MsgId}, Message}).
 
-ack_message(ClientId, Message = #mqtt_message{msgid = MsgId, topic = <<"chat/", To/binary>>) ->
+ack_message(_ClientId, #mqtt_message{msgid = MsgId, topic = <<"chat/", To/binary>>}) ->
     ets:delete(slimchat_message, {To, MsgId}).
 
-find_offline(To) ->
+find_offline_msg(To) ->
     {ok, lists:append(ets:match(slimchat_message, {{To, '_'}, '$1'}))}.
 
 onunload() ->
