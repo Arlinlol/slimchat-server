@@ -57,9 +57,12 @@ client_online(0, #mqtt_client{client_id  = ClientId,
 
     %% Subscribe chat/room/${roomId}
     F = fun(#slimchat_room{name = Room}) -> {topic(room, Room), 1} end,
-    ClientPid ! {subscribe, [F(Room) || Room <- slimchat_backend:find_rooms(Username)]},
+    case [F(Room) || Room <- slimchat_backend:find_rooms(Username)] of
+        []   -> ok;
+        Subs -> ClientPid ! {subscribe, Subs}
+    end,
 
-    %% Broadcast presences
+    %% Broardcast presence
     emqttd_pooler:async_submit(
         fun() -> 
             lists:foreach(fun(#slimchat_contact{username = Contact}) ->
