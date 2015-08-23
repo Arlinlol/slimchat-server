@@ -27,6 +27,8 @@
 
 -module(slimchat_auth).
 
+-author("Feng Lee <feng@emqtt.io>").
+
 -export([check/2]).
 
 check(Username, Password) ->

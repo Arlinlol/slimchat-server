@@ -29,8 +29,28 @@
 
 -author("Feng Lee <feng@emqtt.io>").
 
--export([broker/0]).
+-export([load/0, broker/0, unload/0]).
+
+-export([now_to_secs/0, now_to_secs/1]).
 
 broker() ->
     {ok, Addr} = application:get_env(slimchat, broker), Addr.
+
+load() ->
+    slimchat_backend:load(),
+    slimchat_mod_message:load([]),
+    slimchat_mod_offline:load([]),
+    slimchat_mod_presence:load([]).
+    
+unload() ->
+    slimchat_mod_presence:unload([]),
+    slimchat_mod_offline:unload([]),
+    slimchat_mod_message:unload([]),
+    slimchat_backend:unload().
+
+now_to_secs() ->
+    now_to_secs(os:timestamp()).
+
+now_to_secs({MegaSecs, Secs, _MicroSecs}) ->
+    MegaSecs * 1000000 + Secs.
 

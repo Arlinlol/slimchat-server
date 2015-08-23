@@ -20,17 +20,44 @@
 %%% SOFTWARE.
 %%%-----------------------------------------------------------------------------
 %%% @doc
-%%% SlimChat Room
+%%% SlimChat PostgreSQL Backend.
 %%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 
--module(slimchat_room).
+-module(slimchat_backend_pgsql).
 
 -include("slimchat.hrl").
 
--export([to_list/1]).
+-include_lib("emqttd/include/emqttd.hrl").
 
-to_list(#slimchat_room{name = Name, nick = Nick}) ->
-    [{id, Name}, {nick, Nick}, {avatar, <<"">>}].
+-behavihour(slimchat_backend).
+
+%% slimchat_backend callbacks
+-export([onload/0, onunload/0]).
+
+-export([store_message/1, ack_message/2]).
+
+-export([find_contacts/1, find_rooms/1, find_offline_msg/1]).
+
+onload() ->
+    ok.
+
+find_contacts(Username) ->
+    [].
+
+find_rooms(Username) ->
+    [].
+
+find_offline_msg(Endpoint) ->
+    [].
+
+store_message(#mqtt_message{payload = Payload}) ->
+    ok.
+
+ack_message(ClientId, Message) ->
+    ok.
+
+onunload() ->
+   ok.
 

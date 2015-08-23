@@ -20,25 +20,39 @@
 %%% SOFTWARE.
 %%%-----------------------------------------------------------------------------
 %%% @doc
-%%% SlimChat Mnesia Table Management.
+%%% SlimChat Mnesia Backend
 %%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 
--module(slimchat_tables).
+-module(slimchat_backend_mnesia).
+
+-author("Feng Lee <feng@emqtt.io>").
 
 -include("slimchat.hrl").
 
--export([create_tables/0, copy_tables/0]).
+-include_lib("emqttd/include/emqttd.hrl").
 
-create_tables() ->
+-behaviour(slimchat_backend).
 
+%% slimchat_backend callbacks
+-export([onload/0, onunload/0]).
+
+-export([store_message/1, ack_message/2]).
+
+-export([find_contacts/1, find_rooms/1, find_offline_msg/1]).
+
+-export([add_contact/1, del_contact/1, add_room/1, del_room/1]).
+
+onload() ->
+    ets:new(slimchat_message, [ordered_set, named_table, public]),
     mnesia:create_table(slimchat_contact, [
-                {type, set},
+                {type, ordered_set},
                 {ram_copies, [node()]},
                 {record_name, slimchat_contact},
                 {attributes, record_info(fields, slimchat_contact)}
             ]),
+    mnesia:add_table_copy(slimchat_contact, node(), ram_copies),
 
     mnesia:create_table(slimchat_roster, [
                 {type, bag},
@@ -46,24 +60,55 @@ create_tables() ->
                 {record_name, slimchat_roster},
                 {attributes, record_info(fields, slimchat_roster)}
             ]),
+    mnesia:add_table_copy(slimchat_roster, node(), ram_copies),
 
     mnesia:create_table(slimchat_room, [
-                {type, set},
+                {type, ordered_set},
                 {ram_copies, [node()]},
                 {record_name, slimchat_room},
                 {attributes, record_info(fields, slimchat_room)}
             ]),
+    mnesia:add_table_copy(slimchat_room, node(), ram_copies),
 
     mnesia:create_table(slimchat_member, [
                 {type, bag},
                 {ram_copies, [node()]},
                 {record_name, slimchat_member},
                 {attributes, record_info(fields, slimchat_member)}
-            ]).
+            ]),
+    mnesia:add_table_copy(slimchat_member, node(), ram_copies).
 
-copy_tables() ->
-    [mnesia:add_table_copy(Tab, node(), ram_copies) ||
-            Tab <- [slimchat_contact, slimchat_roster,
-                    slimchat_room, slimchat_member]].
+find_contacts(Username) ->
+    CNames = [CName || #slimchat_roster{cname = CName}
+                         <- mnesia:dirty_read(slimchat_roster, Username)],
+    {ok, lists:append([mnesia:dirty_read(slimchat_contact, CName) || CName <- CNames])}.
 
+add_contact(Contact) when is_record(Contact, slimchat_contact) ->
+    mnesia:transaction(fun mnesia:write/1, [Contact]).
 
+del_contact(Name)->
+    mnesia:transaction(fun mnesia:delete/1, [{slimchat_contact, Name}]).
+
+find_rooms(Username) ->
+    Names =[ Room || #slimchat_member{room = Room} <-
+              mnesia:dirty_match_object(#slimchat_member{room = '_', uname = Username}) ],
+    lists:append([mnesia:dirty_read(slimchat_room, Name) || Name <- Names]).
+
+add_room(Room) when is_record(Room, slimchat_room) ->
+    mnesia:transaction(fun mnesia:write/1, [Room]).
+
+del_room(Name) ->
+    mnesia:transaction(fun mnesia:delete/1, [{slimchat_room, Name}]).
+
+store_message(Message = #mqtt_message{msgid = MsgId, topic = <<"chat/", To/binary>>}) ->
+    ets:insert(slimchat_message, {{To, MsgId}, Message}).
+
+ack_message(_ClientId, #mqtt_message{msgid = MsgId, topic = <<"chat/", To/binary>>}) ->
+    ets:delete(slimchat_message, {To, MsgId}).
+
+find_offline_msg(To) ->
+    {ok, lists:append(ets:match(slimchat_message, {{To, '_'}, '$1'}))}.
+
+onunload() ->
+    ok.
+ 
