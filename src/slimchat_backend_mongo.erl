@@ -54,7 +54,9 @@ find_contacts(Username) ->
 find_rooms(Username) ->
     RelDocs = emongo:find(slimchat, "roomUser", [{<<"userId">>, Username}]),
     RoomIds = [proplists:get_value(<<"roomId">>, Doc) || Doc <- RelDocs],
+    lager:info("RoomIds of ~s: ~p", [Username, RoomIds]),
     RoomDocs = emongo:find(slimchat, "room", [{<<"roomName">>, [{in, RoomIds}]}]),
+    lager:info("RoomDocs of ~s: ~p", [Username, RoomDocs]),
     lists:map(fun(RoomDoc) ->
         #slimchat_room{name  = proplists:get_value(<<"roomName">>,  RoomDoc),
                        nick  = proplists:get_value(<<"roomTitle">>, RoomDoc),
